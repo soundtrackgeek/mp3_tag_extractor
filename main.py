@@ -13,6 +13,13 @@ output_csv = 'current_tags.csv'
 # List to hold the tag data
 tag_data = []
 
+# Helper function to clean tag values
+def clean_tag_value(value):
+    # If the value is a list, join its elements with a comma
+    if isinstance(value, list):
+        return ', '.join(str(item) for item in value)
+    return str(value)
+
 # Traverse the directory
 for root, dirs, files in os.walk(directory):
     for file in files:
@@ -27,7 +34,7 @@ for root, dirs, files in os.walk(directory):
                     
                     # Get common tags from EasyID3
                     for tag in audio_easy.keys():
-                        tags[tag] = audio_easy[tag]
+                        tags[tag] = clean_tag_value(audio_easy[tag])
                     
                     # Get all tags from ID3 (includes ID3v2.3 and ID3v2.4 tags)
                     for frame_id, frame in audio_full.items():
@@ -40,14 +47,14 @@ for root, dirs, files in os.walk(directory):
                         
                         # Convert the frame value to string
                         if hasattr(frame, 'text'):
-                            tags[tag_name] = str(frame.text)
+                            tags[tag_name] = clean_tag_value(frame.text)
                         else:
-                            tags[tag_name] = str(frame)
+                            tags[tag_name] = clean_tag_value(frame)
                 
                 elif file.endswith('.flac'):
                     audio = FLAC(file_path)
                     for tag in audio.keys():
-                        tags[tag] = audio[tag]
+                        tags[tag] = clean_tag_value(audio[tag])
                 
                 tags['file_path'] = file_path
                 tag_data.append(tags)
