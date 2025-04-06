@@ -1,14 +1,38 @@
 import os
 import csv
+import time
+import datetime
+from pathlib import Path
 from mutagen.easyid3 import EasyID3
+from mutagen.id3 import ID3
 from mutagen.flac import FLAC
-from mutagen.id3 import ID3, POPM  # Import ID3 and POPM for rating extraction
 
-# Define the directory to scan
-directory = r'c:\_MP3TODO'
+# Define the directories to scan
+directories = [
+    r'H:\AdditionalMusic',
+    r'H:\SinglesCompilations',
+    r'H:\SonicMusic',
+    r'H:\SonicScoresNewest',
+    r'H:\Synthwave',
+    r'I:\ModernMusic',
+    r'I:\ModernSoundtracks',
+    r'D:\_Backup\SonicPlexamp',
+    r'D:\_Backup\SonicScoresPlexamp',
+    r'G:\_BACKUP\PlexAMP',
+    r'J:\SonicScores',
+    r'D:\SonicScoresPlexampNew'
+]
 
-# Define the output CSV file
-output_csv = 'current_tags.csv'
+# Define CSV file settings
+output_dir = 'tag_exports'
+csv_base_name = 'audio_tags'
+max_files_per_csv = 100000  # Number of files per CSV chunk
+
+# Create output directory if it doesn't exist
+os.makedirs(output_dir, exist_ok=True)
+
+# Generate timestamp for this run
+timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
 # List to hold the tag data
 tag_data = []
@@ -22,23 +46,10 @@ for root, dirs, files in os.walk(directory):
             try:
                 if file.endswith('.mp3'):
                     audio = EasyID3(file_path)
-                    # Load raw ID3 tags for POPM
-                    raw_id3 = ID3(file_path)
-                    for tag in audio.keys():
-                        tags[tag] = audio[tag]
-                    # Get POPM rating if it exists
-                    if 'POPM:' in raw_id3:
-                        popm_frame = raw_id3['POPM:']
-                        tags['rating'] = popm_frame.rating
                 elif file.endswith('.flac'):
                     audio = FLAC(file_path)
-                    for tag in audio.tags:
-                        key = tag[0].lower()
-                        tags[key] = tag[1]
-                    # Get RATING if it exists
-                    if 'rating' in tags:
-                        tags['rating'] = tags['rating']
-                
+                for tag in audio.keys():
+                    tags[tag] = audio[tag]
                 tags['file_path'] = file_path
                 tag_data.append(tags)
             except Exception as e:
@@ -49,11 +60,16 @@ all_keys = set()
 for tags in tag_data:
     all_keys.update(tags.keys())
 
-# Write the tags to the CSV file
-with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
-    writer = csv.DictWriter(csvfile, fieldnames=list(all_keys))
-    writer.writeheader()
-    for tags in tag_data:
-        writer.writerow(tags)
+# Write any remaining data to a final CSV file
+if tag_data:
+    output_path = write_csv_file(tag_data, current_csv_count)
+    csv_files_created.append(output_path)
 
-print(f"Tags have been extracted and saved to {output_csv}")
+# Summary report
+print(f"\n✅ Task completed!")
+print(f"  - Processed files: {processed_files}")
+print(f"  - Errors encountered: {errors}")
+print(f"  - CSV files created: {len(csv_files_created)}")
+for csv_file in csv_files_created:
+    print(f"    - {csv_file}")
+print(f"\nCSV files are saved in the '{output_dir}' directory.")
