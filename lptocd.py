@@ -73,5 +73,5 @@ def main(root_directory):
 if __name__ == "__main__":
     # Define the root directory containing album folders
     # IMPORTANT: Make sure this path is correct for your system
-    target_directory = r'd:\_LPTOFIX'
+    target_directory = r'd:\LPTOFIX'
     main(target_directory) 
